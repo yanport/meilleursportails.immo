@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Carte du top des portails par département</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <style>
+
+        body {
+            font: 10px sans-serif;
+        }
+
+        .border {
+            stroke-width: .3px;
+            fill: none;
+            stroke: #333;
+        }
+
+        .label {
+            font-size: small;
+        }
+
+        .key path {
+            display: none;
+        }
+
+        .key line {
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .department:hover {
+            opacity: 0.6;
+        }
+
+        .department .popover-content {
+            padding: 0px 10px
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .department.popover {
+            font-size: 0.9em;
+        }
+
+        ol {
+            padding: 5px;
+        }
+
+        ol li {
+            padding: 0;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <svg width="800" height="550"></svg>
+    <script id="tooltip-template" type="text/x-handlebars-template">
+        <div>
+            <h3 class="popover-title">Top 3 - {{title}}</h3>
+
+            <div class="popover-content">
+                {{body}}
+                <ol>
+                    {{#each adCounts}}
+                    <li>{{crawlSourceName}} : {{formattedAdCount}} annonces</li>
+                    {{/each}}
+                </ol>
+            </div>
+        </div>
+    </script>
+    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <script src="https://d3js.org/d3-queue.v3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.19.0/d3-legend.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.6/handlebars.min.js"></script>
+    <script>
+        var svg = d3.select("svg"),
+                width = +svg.attr("width"),
+                height = +svg.attr("height"),
+                formatNumber = d3.format(',');
+
+        function getParameterByName(name, url) {
+            if (!url) {
+                url = window.location.href;
+            }
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                    results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
+        }
+
+        var portalType = getParameterByName('portalType');
+        console.log(portalType);
+
+        var crawlSources = ['LE_BON_COIN', 'SUPER_IMMO', 'SE_LOGER', 'A_VENDRE_A_LOUER', 'OUEST_FRANCE_IMMO', 'LOGIC_IMMO', 'ACHETER_LOUER', 'IMMONOT', 'BIEN_ICI', 'EXPLORIMMO', 'PARU_VENDU', 'FNAIM', 'ANNONCES_JAUNES', 'TOP_ANNONCES'];
+        var crawlSourceNames = ['Leboncoin', 'Super Immo', 'SeLoger', 'À Vendre À Louer', 'Ouest France', 'Logic Immo', 'Acheter Louer', 'Immonot', 'Bien Ici', 'Explorimmo', 'Paru Vendu', 'Fnaim', 'Annonces Jaunes', 'Top Annonces'];
+        var color = d3.scaleOrdinal(["#F56B2A", "#2586C8", "#e00034", d3.color("#a41f72").brighter(), d3.color('#DDD').darker(), d3.color("#008DCF").brighter(), '#242424', '#A7B936', '#ffb82f', '#900'])
+                .domain(crawlSources.slice(0, 10));
+
+        var tooltip = d3.select('body').append('div')
+                .attr('class', 'hidden popover');
+
+        var source = $("#tooltip-template").html();
+        var template = Handlebars.compile(source);
+
+        svg.append("g")
+                .attr("class", "legendOrdinal")
+                .attr("transform", "translate(510,80)");
+
+        var legendOrdinal = d3.legendColor()
+                .shape("path", d3.symbol().type(d3.symbolSquare).size(300)())
+                .shapePadding(10)
+                .scale(color)
+                .labels(crawlSourceNames);
+
+        svg.select(".legendOrdinal")
+                .call(legendOrdinal);
+
+        var x = d3.scaleLinear()
+                .domain([77156, 2579208])
+                .range([0, 300]);
+
+        var projection = d3.geoAlbers()
+                .center([0, 49.5])
+                .rotate([-2.8, 3])
+                .parallels([45, 55])
+                .scale(2500)
+                .translate([width * 0.3, height * 0.4]);
+
+        var path = d3.geoPath()
+                .projection(projection);
+
+        var g = svg.append("g")
+                .attr("class", "key")
+                .attr("transform", "translate(0,40)");
+
+        d3.queue().defer(d3.json, "assets/france.json")
+                .defer(d3.csv, "assets/departement.csv")
+                .defer(d3.csv, "assets/ad-count-by-portal.csv", function (row) {
+                    row.adCount = +row.adCount;
+                    return row;
+                })
+                .await(ready);
+
+        function ready(error, france, departments, adCountByPortal) {
+
+            var departmentByName = _.keyBy(departments, 'name'),
+                    adCountByDepartmentName = _.groupBy(adCountByPortal, 'department');
+
+            var countByCrawlSource = {};
+
+            _.forEach(crawlSources, function (crawlSource) {
+                countByCrawlSource[crawlSource] = 0;
+            });
+
+            adCountByDepartmentName['CORSE'] = _.map(adCountByDepartmentName['CORSE_DU_SUD'], function (adCount1) {
+                var adCount2 = _.filter(adCountByDepartmentName['HAUTE_CORSE'], function (adCount) {
+                    return adCount1.crawlSource == adCount.crawlSource && adCount1.marketingType == adCount.marketingType;
+                })[0];
+
+                return {
+                    adCount: adCount1.adCount + adCount2.adCount,
+                    crawlSource: adCount1.crawlSource,
+                    marketingType: adCount1.marketingType,
+                    url: adCount1.url,
+                    department: 'CORSE',
+                    departmentCode: '2'
+                };
+            });
+
+            var regions = svg.selectAll(".departements")
+                    .data(topojson.feature(france, france.objects.regions).features)
+                    .enter().append("path")
+                    .attr("class", "departements")
+                    .attr("d", path)
+                    .style("fill", function (departement) {
+                        if (!_.has(departmentByName, departement.properties.name)) {
+                            return;
+                        }
+
+                        var departementNormalized = departmentByName[departement.properties.name];
+
+                        if (departementNormalized.normalizedName == 'CORSE_DU_SUD' || departementNormalized.normalizedName == 'HAUTE_CORSE') {
+                            departementNormalized.normalizedName = 'CORSE';
+                        }
+
+                        var adCounts = _.reverse(_.sortBy(_.filter(adCountByDepartmentName[departementNormalized.normalizedName], function (element) {
+                            if (portalType == 'paid')
+                                return element.marketingType === 'SALE' && element.crawlSource != 'SUPER_IMMO';
+                            return element.marketingType === 'SALE';
+                        }), 'adCount'));
+
+                        _.forEach(adCounts, function (adCount) {
+                            adCount.formattedAdCount = formatNumber(adCount.adCount);
+                            var idx = _.findIndex(crawlSources, function (c) {
+                                return c == adCount.crawlSource
+                            });
+                            adCount.crawlSourceName = crawlSourceNames[idx];
+                        });
+
+                        countByCrawlSource[adCounts[0].crawlSource] += 1;
+
+                        departement.properties.adCounts = adCounts;
+
+                        return color(adCounts[0].crawlSource);
+                    })
+                    .attr('class', function (d) {
+                        return 'department ' + d.properties.name;
+                    })
+                    .on('mousemove', function (d) {
+                        var mouse = d3.mouse(svg.node()).map(function (d) {
+                            return parseInt(d);
+                        });
+                        var context = {title: d.properties.name, adCounts: d.properties.adCounts.slice(0, 3)};
+                        var html = template(context);
+                        tooltip.attr('class', 'department popover show')
+                                .attr('style', 'left:' + (mouse[0] + 130) +
+                                'px; top:' + (mouse[1] - 50) + 'px')
+                                .html(html);
+                    })
+                    .on('mouseout', function () {
+                        tooltip.classed('hidden', true);
+                    });
+
+            svg.append("path")
+                    .datum(topojson.mesh(france, france.objects.regions, function (a, b) {
+                        return a.properties.name !== b.properties.name || a === b;
+                    }))
+                    .attr("class", "border")
+                    .attr("d", path);
+        }
+    </script>
+</div>
+</body>
+</html>
