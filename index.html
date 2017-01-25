@@ -16,9 +16,9 @@
         }
 
         .border {
-            stroke-width: .3px;
+            stroke-width: .4px;
             fill: none;
-            stroke: #333;
+            stroke: #000;
         }
 
         .label {
@@ -38,16 +38,8 @@
             opacity: 0.6;
         }
 
-        .department .popover-content {
-            padding: 0px 10px
-        }
-
         .hidden {
             display: none;
-        }
-
-        .department.popover {
-            font-size: 0.9em;
         }
 
         ol {
@@ -103,7 +95,6 @@
         }
 
         var portalType = getParameterByName('portalType');
-        console.log(portalType);
 
         var crawlSources = ['LE_BON_COIN', 'SUPER_IMMO', 'SE_LOGER', 'A_VENDRE_A_LOUER', 'OUEST_FRANCE_IMMO', 'LOGIC_IMMO', 'ACHETER_LOUER', 'IMMONOT', 'BIEN_ICI', 'EXPLORIMMO', 'PARU_VENDU', 'FNAIM', 'ANNONCES_JAUNES', 'TOP_ANNONCES'];
         var crawlSourceNames = ['Leboncoin', 'Super Immo', 'SeLoger', 'À Vendre À Louer', 'Ouest France', 'Logic Immo', 'Acheter Louer', 'Immonot', 'Bien Ici', 'Explorimmo', 'Paru Vendu', 'Fnaim', 'Annonces Jaunes', 'Top Annonces'];
@@ -118,7 +109,7 @@
 
         svg.append("g")
                 .attr("class", "legendOrdinal")
-                .attr("transform", "translate(510,80)");
+                .attr("transform", "translate(550,120)");
 
         var legendOrdinal = d3.legendColor()
                 .shape("path", d3.symbol().type(d3.symbolSquare).size(300)())
@@ -137,8 +128,8 @@
                 .center([0, 49.5])
                 .rotate([-2.8, 3])
                 .parallels([45, 55])
-                .scale(2500)
-                .translate([width * 0.3, height * 0.4]);
+                .scale(3000)
+                .translate([width * 0.35, height * 0.5]);
 
         var path = d3.geoPath()
                 .projection(projection);
@@ -227,8 +218,8 @@
                         var context = {title: d.properties.name, adCounts: d.properties.adCounts.slice(0, 3)};
                         var html = template(context);
                         tooltip.attr('class', 'department popover show')
-                                .attr('style', 'left:' + (mouse[0] + 130) +
-                                'px; top:' + (mouse[1] - 50) + 'px')
+                                .attr('style', 'left:' + (mouse[0] + 170) +
+                                'px; top:' + (mouse[1] - 30) + 'px')
                                 .html(html);
                     })
                     .on('mouseout', function () {
