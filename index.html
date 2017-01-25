@@ -109,7 +109,7 @@
 
         svg.append("g")
                 .attr("class", "legendOrdinal")
-                .attr("transform", "translate(450,80)");
+                .attr("transform", "translate(450,100)");
 
         var legendOrdinal = d3.legendColor()
                 .shape("path", d3.symbol().type(d3.symbolSquare).size(300)())
@@ -129,7 +129,7 @@
                 .rotate([-2.8, 3])
                 .parallels([45, 55])
                 .scale(2700)
-                .translate([width * 0.41, height * 0.45]);
+                .translate([width * 0.41, height * 0.51]);
 
         var path = d3.geoPath()
                 .projection(projection);
@@ -219,7 +219,7 @@
                         var html = template(context);
                         tooltip.attr('class', 'department popover show')
                                 .attr('style', 'left:' + (mouse[0] + 60) +
-                                'px; top:' + (mouse[1] - 60) + 'px')
+                                'px; top:' + (mouse[1] - 50) + 'px')
                                 .html(html);
                     })
                     .on('mouseout', function () {
