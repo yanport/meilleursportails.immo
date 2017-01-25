@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Carte du top des portails par département</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div id="ranking">
+            </div>
+        </div>
+    </div>
+    <script id="ranking-table" type="text/x-handlebars-template">
+        <table class="table table-hover">
+            <thead>
+            <th class="col-md-1"></th>
+            <th class="col-md-3">Site</th>
+            <th class="col-md-3">Nombre d'annonces <small>(vente pro apparts & maisons)</small></th>
+            </thead>
+            <tbody>
+            {{#each adCounts}}
+            <tr>
+                <td class="text-left">N°{{position}}</td>
+                <td class="text-left"><a href="{{url}}"><img src="assets/images/{{logoUrl}}"
+                                                             style="max-width: 120px" alt="{{crawlSourceName}}"></a>
+                </td>
+                <td class="text-left">{{formattedAdCount}}</td>
+            </tr>
+            {{/each}}
+            </tbody>
+        </table>
+        <div class="popover-content">
+            <ol>
+
+            </ol>
+        </div>
+</div>
+</script>
+<script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-queue.v3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.6/handlebars.min.js"></script>
+<script>
+    var formatNumber = d3.format(',');
+    var source = $("#ranking-table").html();
+    var template = Handlebars.compile(source);
+
+    var urlByCrawlSource = {
+        LE_BON_COIN: 'https://www.leboncoin.fr',
+        SUPER_IMMO: 'http://www.superimmo.fr',
+        SE_LOGER: 'http://seloger.com',
+        A_VENDRE_A_LOUER: 'http://www.avendrealouer.fr/',
+        OUEST_FRANCE_IMMO: 'https://www.ouestfrance-immo.com/',
+        LOGIC_IMMO: 'http://www.logic-immo.com/',
+        ACHETER_LOUER: 'http://www.acheter-louer.fr/',
+        IMMONOT: 'http://www.immonot.com/',
+        BIEN_ICI: 'https://www.bienici.com/',
+        EXPLORIMMO: 'http://www.explorimmo.com/',
+        PARU_VENDU: 'http://www.paruvendu.fr/',
+        FNAIM: 'http://www.fnaim.fr/',
+        ANNONCES_JAUNES: 'http://www.annoncesjaunes.fr/',
+        TOP_ANNONCES: 'http://www.topannonces.fr/',
+        BELLES_DEMEURES: 'http://www.bellesdemeures.com/',
+        PROPRIETES_DE_FRANCE: 'http://proprietes.lefigaro.fr/',
+        LUX_RESIDENCE: 'http://www.lux-residence.com/'
+    };
+
+    var crawlSourceNames = {
+        LE_BON_COIN: 'Leboncoin',
+        SUPER_IMMO: 'Super Immo',
+        SE_LOGER: 'SeLoger',
+        A_VENDRE_A_LOUER: 'À Vendre À Louer',
+        OUEST_FRANCE_IMMO: 'Ouest France',
+        LOGIC_IMMO: 'Logic Immo',
+        ACHETER_LOUER: 'Acheter Louer',
+        IMMONOT: 'Immonot',
+        BIEN_ICI: 'Bien Ici',
+        EXPLORIMMO: 'Explorimmo',
+        PARU_VENDU: 'Paru Vendu',
+        FNAIM: 'Fnaim',
+        ANNONCES_JAUNES: 'Annonces Jaunes',
+        TOP_ANNONCES: 'Top Annonces',
+        BELLES_DEMEURES: 'Belles Demeures',
+        PROPRIETES_DE_FRANCE: 'Propriétés Le Figaro',
+        LUX_RESIDENCE: 'Lux Résidence'
+    };
+
+    function getParameterByName(name, url) {
+        if (!url) {
+            url = window.location.href;
+        }
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    var portalType = getParameterByName('portalType');
+
+    d3.queue().defer(d3.json, "assets/france.json")
+            .defer(d3.csv, "assets/count-by-portal-by-department.csv", function (row) {
+                row.adCount = +row.adCount;
+                return row;
+            })
+            .await(ready);
+
+    function ready(error, france, countRows) {
+        var countByCrawlSource = {};
+
+        _.forEach(countRows, function (countRow) {
+            if (_.has(countByCrawlSource, countRow.crawlSource))
+                countByCrawlSource[countRow.crawlSource] += countRow.adCount;
+            else countByCrawlSource[countRow.crawlSource] = 0;
+
+        });
+
+        var crawlSourceCounts = _.map(_.toPairs(countByCrawlSource), function (v) {
+            return {crawlSource: v[0], adCount: v[1]}
+        });
+
+        var adCounts = _.reverse(_.sortBy(_.filter(crawlSourceCounts, function (element) {
+            if (portalType == 'paid')
+                return element.crawlSource != 'SUPER_IMMO';
+            return true;
+        }), 'adCount'));
+
+        _.forEach(adCounts, function (adCount, idx) {
+            adCount.position = idx + 1;
+            adCount.crawlSourceName = crawlSourceNames[adCount.crawlSource];
+            adCount.formattedAdCount = formatNumber(adCount.adCount);
+            adCount.url = urlByCrawlSource[adCount.crawlSource];
+            adCount.logoUrl = 'logo_' + adCount.crawlSource.toLowerCase() + '.png'
+        });
+
+        var html = template({adCounts: adCounts});
+        $("#ranking").html(html);
+
+    }
+</script>
+</div>
+</body>
+</html>
