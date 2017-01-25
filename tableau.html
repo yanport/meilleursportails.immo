@@ -108,22 +108,23 @@
 
     var portalType = getParameterByName('portalType');
 
-    d3.queue().defer(d3.json, "assets/france.json")
+    d3.queue()
             .defer(d3.csv, "assets/count-by-portal-by-department.csv", function (row) {
                 row.adCount = +row.adCount;
                 return row;
             })
             .await(ready);
 
-    function ready(error, france, countRows) {
+    function ready(error, countRows) {
         var countByCrawlSource = {};
-
-        _.forEach(countRows, function (countRow) {
-            if (_.has(countByCrawlSource, countRow.crawlSource))
-                countByCrawlSource[countRow.crawlSource] += countRow.adCount;
-            else countByCrawlSource[countRow.crawlSource] = 0;
-
+        _.forEach(_.keys(urlByCrawlSource), function(key) {
+            countByCrawlSource[key] = 0;
         });
+        _.forEach(countRows, function (countRow) {
+            countByCrawlSource[countRow.crawlSource] += countRow.adCount;
+        });
+
+        console.log(countByCrawlSource);
 
         var crawlSourceCounts = _.map(_.toPairs(countByCrawlSource), function (v) {
             return {crawlSource: v[0], adCount: v[1]}
