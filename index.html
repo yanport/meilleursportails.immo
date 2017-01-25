@@ -54,7 +54,7 @@
 </head>
 <body>
 <div class="container">
-    <svg width="800" height="550"></svg>
+    <svg width="580" height="500"></svg>
     <script id="tooltip-template" type="text/x-handlebars-template">
         <div>
             <h3 class="popover-title">Top 3 - {{title}}</h3>
@@ -109,7 +109,7 @@
 
         svg.append("g")
                 .attr("class", "legendOrdinal")
-                .attr("transform", "translate(550,120)");
+                .attr("transform", "translate(450,80)");
 
         var legendOrdinal = d3.legendColor()
                 .shape("path", d3.symbol().type(d3.symbolSquare).size(300)())
@@ -128,8 +128,8 @@
                 .center([0, 49.5])
                 .rotate([-2.8, 3])
                 .parallels([45, 55])
-                .scale(3000)
-                .translate([width * 0.35, height * 0.5]);
+                .scale(2700)
+                .translate([width * 0.41, height * 0.45]);
 
         var path = d3.geoPath()
                 .projection(projection);
