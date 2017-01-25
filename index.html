@@ -140,7 +140,7 @@
 
         d3.queue().defer(d3.json, "assets/france.json")
                 .defer(d3.csv, "assets/departement.csv")
-                .defer(d3.csv, "assets/ad-count-by-portal.csv", function (row) {
+                .defer(d3.csv, "assets/count-by-portal-by-department.csv", function (row) {
                     row.adCount = +row.adCount;
                     return row;
                 })
