@@ -218,8 +218,8 @@
                         var context = {title: d.properties.name, adCounts: d.properties.adCounts.slice(0, 3)};
                         var html = template(context);
                         tooltip.attr('class', 'department popover show')
-                                .attr('style', 'left:' + (mouse[0] + 170) +
-                                'px; top:' + (mouse[1] - 30) + 'px')
+                                .attr('style', 'left:' + (mouse[0] + 60) +
+                                'px; top:' + (mouse[1] - 60) + 'px')
                                 .html(html);
                     })
                     .on('mouseout', function () {
